@@ -1,0 +1,73 @@
+---
+title: "Total and Relative ASV and Sequence Abundance Plots"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+```
+
+##Total Sequence Counts
+```{r}
+axialplume <- asv_insitu_qc %>% filter(SITE == "Axial") %>%
+  filter(Domain == "Eukaryota") %>% filter(SAMPLETYPE == "Plume") %>%
+  filter(Supergroup != "NA")
+
+unique(axialplume$Supergroup)
+
+ggplot(axialplume, aes(x = value, y = DEPTH, fill = Supergroup)) +
+  geom_bar(stat = "identity") +
+  #coord_flip() +
+  labs(title = "Total Sequence Count by Supergroup in Anemone Plume",
+       x = "Number of Sequences", y = "Depth")
+unique(axialplume$FeatureID)
+glimpse(axialplume)
+```
+
+## Total ASV Counts
+```{r}
+ggplot(axialplume, aes(x=Supergroup, fill=Supergroup)) +
+  geom_bar(stat="count", color="black") +
+  theme(axis.text.x = element_text(angle = 45, h = 1, v = 1)) +
+  labs(title = "Total ASV Count at Axial Seamount Anemone Plume", 
+       x = "Supergroups", y="Number of ASVs")
+```
+
+## Relative Sequence Abundance
+```{r}
+relsequenc_abundance <- axialplume %>% group_by(Supergroup) %>%
+  mutate(supergroup_sum = sum(value)) %>% ungroup() %>%
+  mutate(sequence_sum = sum(value)) %>% 
+  mutate(supergroup_percent = ((supergroup_sum/sequence_sum)*100)) %>%
+  distinct(Supergroup, supergroup_percent, .keep_all = TRUE)
+
+ggplot(relsequenc_abundance, aes(x = VENT, y = supergroup_percent, fill = Supergroup)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  coord_flip() +
+  labs(title = "",
+       x = "",
+       y = "Relative Sequence Abundance")
+```
+
+## Relative ASV Abundance
+```{r}
+summary_df <- axialplume %>%
+  group_by(Supergroup) %>%
+  summarise(total_supergroup = n())
+
+asv_relabundance <- axialplume %>%
+  left_join(summary_df, by = "Supergroup") %>% 
+  mutate(supergroup_percent = ((total_supergroup/423)*100)) %>%
+  distinct(Supergroup, supergroup_percent, .keep_all = TRUE)
+
+ggplot(asv_relabundance, aes(x = VENT, y = supergroup_percent, fill = Supergroup)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  coord_flip() +
+  labs(title = "",
+       x = "",
+       y = "Relative ASV Abundance")
+
+```
